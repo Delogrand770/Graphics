@@ -1,0 +1,405 @@
+<html>
+  <head>
+    <title>3D TicTacToe</title>
+
+    <style>
+      html {  
+        background-image:url("bg.png");
+        background-position: center bottom;
+        background-attachment: fixed;
+        background-size: cover;
+        height: 100%;
+        font-size: 100%;
+        font-family: "Megrim", sans-serif;
+      }
+
+      .btn{
+        height: 30;
+        width: 50;
+        margin: 0;
+        border: 1px solid;
+        background-color: rgba(255, 255, 255, 0.1);
+        border-color: rgba(255, 255, 255, 0.2);
+        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
+        color: rgba(255, 255, 255, 0.9);
+        font-size: 17px;
+        font-weight: normal;
+        font-family: "Megrim", sans-serif;
+        line-height: 1;
+      }
+      object {
+        visibility: hidden;
+      }
+    </style>
+
+    <script src="gaia_chrome_min.js"></script>
+
+	<script>
+		var board;
+		var container;
+		var TTT = {
+			default: {size: 3, container: 'boards', winColor: '#0099ff', startingPlayer: 1},
+			main:function(){
+				container = XM.static({title: "X's Turn", body: '<span id="boards"></span><input type="button" value="AI" onclick="board.computerLogic()">', width: 200, top: 10, left: 'center'});
+				board = new TTT.Board();
+				board.drawMatrix();
+			},
+			Board:function(params){
+
+				this.clear = function(){
+					this.gameOver = false;
+					this.matrix = [];
+					for (var z = 0; z < this.size; z++){
+						this.matrix[z] = [];
+						for (var y = 0; y < this.size; y++){
+							this.matrix[z][y] = [];
+							for (var x = 0; x < this.size; x++){
+								this.matrix[z][y][x] = 0;
+							}
+						}
+					}
+				}
+
+				this.debug = function(x, y, z){
+					document.title = "x: " + x + " | y: " + y + " | z: " + z;
+				}
+
+				this.setTurn = function(turn){
+					this.turn = turn;
+					XM.setTitle(container, (this.turn == 1) ? "X's Turn" : "O's Turn");
+				}
+
+
+				this.setPieceAtLocation = function(p, x, y, z){				
+					//x =  1
+					//o = -1
+					this.matrix[z][y][x] = p;
+				}
+
+				this.isLocationEmpty = function(x, y, z){
+					console.log(x + "|" + y + "|" + z)
+					return (this.matrix[z][y][x] == 0) ? true : false;
+				}
+
+				this.hightlightBlock = function(x, y, z){
+					document.getElementById("x" + z + "x" + y + "x" + x + "x").style.backgroundColor = TTT.default.winColor;		
+				}
+
+				this.sendInput = function(x, y, z){
+					if (!this.gameOver){
+						if (this.isLocationEmpty(x, y, z)){
+							this.setPieceAtLocation(this.turn, x, y, z);
+							this.drawMatrix();
+							var results = this.checkWin();
+							if (results) {
+								this.gameOver = true;
+								for (var i = 0; i < results.length; i += 3){
+									this.hightlightBlock(results[i], results[i + 1], results[i + 2]);
+									XM.setTitle(container, "Game Over");
+								}
+								return;
+							}
+							this.setTurn(this.turn * -1);
+						}
+					} else {
+						board.clear();
+						this.setTurn(TTT.default.startingPlayer);
+						this.drawMatrix();
+					}
+				}
+
+				this.computerLogic = function(){
+					results = this.list_removePlayed(this.checkWin((this.size - 1) * this.turn, true));
+					if (results.length > 0){ //Play where I can win
+						this.sendInput(results[0], results[1], results[2]);
+					}else{
+						results = this.list_removePlayed(this.checkWin((this.size - 1) * this.turn * -1, true));
+						if (results.length > 0){ //Block opponent from winning
+							this.sendInput(results[0], results[1], results[2]);
+						} else {
+							var x = -1;
+							var y = -1;
+							var z = -1;
+							while (x == -1 || y == -1 || z == -1 || !this.isLocationEmpty(x, y, z)){
+								x = Math.round(Math.random() * this.size) - 1;
+								y = Math.round(Math.random() * this.size) - 1;
+								z = Math.round(Math.random() * this.size) - 1;
+							}
+							this.sendInput(x, y, z);
+						}
+					}
+				}
+
+				this.list_removePlayed = function(results){
+					var rdata = [];
+					for (var i = 0; i < results.length; i += 3){
+						if (this.isLocationEmpty(results[i + 2], results[i + 1], results[i])){
+							rdata.push(results[i + 2], results[i + 1], results[i]);
+						}
+					}
+					return rdata;
+				}
+
+				this.checkWin = function(target, signMatters){
+					var target = target || this.size;
+					var signMatters = signMatters || false;
+					var wins = [[], [], [], [], [], [], [], [], [], [], []];
+					var sums = [];
+					//this.matrix[z][y][x]; //y
+					//this.matrix[y][x][z]; //x
+					//this.matrix[y][z][x]; //z
+					sums[9] = sums[10] = 0;
+
+					for (var z = 0; z < this.size; z++){
+
+						sums[0] = sums[1] = sums[2] = sums[3] = sums[4] = sums[5] = 0;
+						wins = [[], [], [], [], [], [], wins[6], wins[7], wins[8], wins[9], wins[10]];
+
+						for (var y = 0; y < this.size; y++){
+
+							sums[6] = sums[7] = sums[8] = 0;
+							wins = [wins[0], wins[1], wins[2], wins[3], wins[4], wins[5], [], [], [], wins[9], wins[10]]
+							for (var x = 0; x < this.size; x++){
+
+								//diag ul to lr
+								if (x == y){
+									sums[0] += this.matrix[z][y][x];
+									wins[0].push(z, y, x);
+
+									sums[2] += this.matrix[y][x][z];
+									wins[2].push(y, x, z);
+
+									sums[4] += this.matrix[y][z][x];
+									wins[4].push(y, z, x);
+								}
+
+								//diag ll to ur
+								if (x + y == this.size - 1){
+									sums[1] += this.matrix[z][y][x];
+									wins[1].push(z, y, x);
+
+									sums[3] += this.matrix[y][x][z];
+									wins[3].push(y, x, z);
+
+									sums[5] += this.matrix[y][z][x];
+									wins[5].push(y, z, x);
+								}
+
+								//rows and cols
+								sums[6] += this.matrix[z][y][x];
+								wins[6].push(z, y, x);
+								sums[7] += this.matrix[z][x][y];
+								wins[7].push(z, x, y);
+								sums[8] += this.matrix[x][y][z];
+								wins[8].push(x, y, z);
+
+								//diag across all planes ul to lr
+								if (x == y && y == z){
+									sums[9] += this.matrix[z][y][x];
+									wins[9].push(z, y, x);
+								}
+
+								//diag across all planes ll to ur
+								if (z == y && x + y == this.size - 1){
+									sums[10] += this.matrix[z][y][x];
+									wins[10].push(z, y, x);
+								}
+							}
+
+							//Check for a winning sum... either -this.size [O] or this.size [X]
+							for (var i = 0; i < sums.length; i++){
+								if (signMatters){
+									if (sums[i] == target){
+										return wins[i];
+									}
+								}else {
+									if (Math.abs(sums[i]) == target){
+										return wins[i];
+									}
+								}
+							}
+						}
+					}
+					return false;
+				}
+
+				this.drawMatrix = function(){
+					var data = "";
+					for (var z = 0; z < this.size; z++){
+						data += '<center><br><table style="color: white;" cellpadding=0 cellspacing=0>';
+						for (var y = 0; y < this.size; y++){
+							data += "<tr>";
+							for (var x = 0; x < this.size; x++){
+								data += '<td style="border:1 solid white;height:21;width:20;text-align:center;cursor:hand;" onclick="board.sendInput('+x+', '+y+', '+z+')" onmouseover="board.debug('+x+', '+y+', '+z+')" id="x'+x+'x'+y+'x'+z+'x">';
+								data += (this.matrix[z][y][x] == 1) ? "X" : (this.matrix[z][y][x] == 0) ? " " : "O";
+								data += "</td>";
+							}
+							data += "</tr>";
+						}
+						data += "</table><br></center>";
+					}
+					document.getElementById(this.targetContainer).innerHTML = data;						
+				}
+
+				this.displayMatrix = function(){
+					var data = "";
+					for (var z = 0; z < this.size; z++){
+						data += "\n";
+						for (var y = 0; y < this.size; y++){
+							data += "\n";
+							for (var x = 0; x < this.size; x++){
+								data += (this.matrix[z][y][x] == 1) ? "X" : (this.matrix[z][y][x] == 0) ? "E" : "O";
+							}
+						}
+					}	
+					return data;	
+				}
+
+				params = params || {};
+				this.targetContainer = params.container || TTT.default.container;
+				this.size = params.size || TTT.default.size;
+				this.matrix = null;
+				this.clear();
+				this.setTurn(TTT.default.startingPlayer);
+
+			}
+		};
+	</script>
+
+  </head>
+
+  <body onload="myGame.init();">
+    <span id="game_HTML">
+      <center>
+        <canvas id="GameWindow" style="border:1 solid silver;" width="400" height="400">
+        Please use a modern browser that supports "canvas"... Chrome
+        </canvas>
+      </center>
+    </span>
+
+    <span id="translation_HTML">
+      <center>
+        <fieldset>
+          <legend>Camera</legend>
+          Perspective<input type="radio" name="view" value="Perspective" checked onclick="myGame.setProjectionMode(1)">
+          <br>
+          Orthogonal<input type="radio" name="view" value="Orthogonal" onclick="myGame.setProjectionMode(0)"><br><br>
+          <select id="cameraModifier" onchange="myGame.setCameraMode(this.value)">
+            <option value=10 selected>Reset</option>
+            <option value=1>Pan</option>
+            <option value=2>Tilt</option>
+            <option value=3>Pedestal</option>
+            <option value=4>Tongue</option>
+            <option value=5>Crane</option>
+            <option value=6>Dolly</option>
+            <option value=7>Truck</option>
+            <option value=8>Arc</option>
+            <option value=9>Cant</option>
+          </select>
+        </fieldset>
+      </center>
+    </span>
+
+    <!-- Load the model data -->
+    <object id="x_obj" data="x.obj" type="application/xml"></object>
+    <object id="x_mtl" data="x.mtl" type="application/xml"></object>
+    <object id="o_obj" data="o.obj" type="application/xml"></object>
+    <object id="o_mtl" data="o.mtl" type="application/xml"></object>
+    <object id="w_obj" data="w.obj" type="application/xml"></object>
+    <object id="w_mtl" data="w.mtl" type="application/xml"></object>
+    <object id="e_obj" data="e.obj" type="application/xml"></object>
+    <object id="e_mtl" data="e.mtl" type="application/xml"></object>
+
+
+    <!-- Load in the JavaScript utility libraries -->
+    <script src="../lib/webgl-utils.js"></script>
+    <script src="../lib/webgl-debug.js"></script>
+    <script src="../lib/cuon-utils.js"></script>
+    <script src="../lib/cuon-matrix.js"></script>
+
+    <object id="myVertexShader" type="text/text">
+      precision mediump int;
+      
+      attribute vec4 a_Position;
+      attribute vec4 a_Color;
+      attribute vec3 a_Normal;
+      attribute vec2 a_TexCoord;
+      
+      uniform mat4 u_TransformMatrix;
+      uniform mat4 u_ModelMatrix;
+      uniform int colorMode;
+      
+      varying vec3 v_Position;
+      varying vec3 v_Normal;
+      varying vec4 v_Color;
+      varying vec2 v_TexCoord;
+
+      void main(void) {
+        gl_Position = u_TransformMatrix * a_Position;
+
+        //Calculate the certex position in the world coordinates
+        v_Position = vec3(u_ModelMatrix * a_Position);
+        v_Normal = normalize( vec3(u_ModelMatrix * vec4(a_Normal,0)) );
+        v_Color = a_Color;
+        v_TexCoord = a_TexCoord;
+      }
+    </object>
+    <object id="myFragmentShader" type="text/text">
+      precision mediump float;
+      precision mediump int;
+      
+      uniform int colorMode;
+      uniform sampler2D u_Sampler;
+      uniform vec3 u_LightColor;
+      uniform vec3 u_LightPosition;
+      uniform vec3 u_AmbientLight;
+      
+      varying vec3 v_Position;
+      varying vec3 v_Normal;
+      varying vec4 v_Color;
+      varying vec2 v_TexCoord;
+      
+      const int COLORED_MODEL = 0;
+      const int TEXTURED_MODEL = 1;
+      const int COLORED_AND_TEXTURED_MODEL = 2;
+      
+      void main(void) {
+        vec4 objectColor;
+        if (colorMode == COLORED_MODEL) {
+          objectColor = v_Color;
+        } else if (colorMode == TEXTURED_MODEL) {
+          objectColor = texture2D(u_Sampler, v_TexCoord);
+        } else { // Use a combination of the texture and color
+          float percent = v_Color[3];
+          vec4 texColor = texture2D(u_Sampler, v_TexCoord);
+          objectColor = v_Color * percent + texColor*(1.0-percent);
+        }
+
+        //Normalize normal because it's interpolated and not 1.0 length
+        vec3 normal = normalize( v_Normal );
+        //Calculate the light direction and make it 1.0 in length
+        vec3 lightDirection = normalize ( u_LightPosition - v_Position);
+        //Calculate the angle between the light direction and the surface normal
+        float nDotL = max( dot(lightDirection, normal),0.0);
+        //Calculate the diffuse light based on the angle
+        vec3 diffuse = u_LightColor * objectColor.rgb * nDotL;
+        //Calculate the ambient light
+        vec3 ambient = u_AmbientLight * objectColor.rgb;
+
+        // The final color is a combination of ambient and diffuse light
+        gl_FragColor = vec4(diffuse + ambient, objectColor.a);
+      }
+    </object>
+
+    <!-- Load in the Tetris game code -->
+    <script src="Model3DCreatorV3.js"></script>
+    <script src="Container.js"></script>
+    <script src="3DTicTacToe.js"></script>
+
+    <!-- All game functionality is included in the object 'myGame' -->
+    <script type="text/javascript">
+      var myGame = new TicTacToe3D(); 
+    </script>
+
+  </body>
+</html>

@@ -1,0 +1,287 @@
+<!--
+  Created by C1C Gavin Delphia
+  Documentation: None
+-->
+
+<html>
+	<head>
+	  <title>3D Tic Tac Toe</title>
+	</head>
+
+	<style>
+		html {  
+		  background-image:url("bg.png");
+		  background-position: center bottom;
+		  background-attachment: fixed;
+		  background-size: cover;
+		  height: 100%;
+		  font-size: 100%;
+		  font-family: "Megrim", sans-serif;
+		  color:white;
+		}
+
+		.btn{
+			height: 30;
+		  width: 50;
+			margin: 0;
+			border: 1px solid;
+			background-color: rgba(255, 255, 255, 0.1);
+			border-color: rgba(255, 255, 255, 0.2);
+			box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
+			color: rgba(255, 255, 255, 0.9);
+			font-size: 17px;
+			font-weight: normal;
+			font-family: "Megrim", sans-serif;
+			line-height: 1;
+		}
+	</style>
+
+	<script>
+		var board;
+		var container;
+		var TTT = {
+			default: {size: 3, container: 'boards', winColor: '#0099ff', startingPlayer: 1},
+			main:function(){
+				container = XM.static({title: "X's Turn", body: '<span id="boards"></span><input type="button" value="AI" onclick="board.computerLogic()">', width: 200, top: 10, left: 'center'});
+				board = new TTT.Board();
+				board.drawMatrix();
+			},
+			Board:function(params){
+
+				this.clear = function(){
+					this.gameOver = false;
+					this.matrix = [];
+					for (var z = 0; z < this.size; z++){
+						this.matrix[z] = [];
+						for (var y = 0; y < this.size; y++){
+							this.matrix[z][y] = [];
+							for (var x = 0; x < this.size; x++){
+								this.matrix[z][y][x] = 0;
+							}
+						}
+					}
+				}
+
+				this.debug = function(x, y, z){
+					document.title = "x: " + x + " | y: " + y + " | z: " + z;
+				}
+
+				this.setTurn = function(turn){
+					this.turn = turn;
+					XM.setTitle(container, (this.turn == 1) ? "X's Turn" : "O's Turn");
+				}
+
+
+				this.setPieceAtLocation = function(p, x, y, z){				
+					//x =  1
+					//o = -1
+					this.matrix[z][y][x] = p;
+				}
+
+				this.isLocationEmpty = function(x, y, z){
+					console.log(x + "|" + y + "|" + z)
+					return (this.matrix[z][y][x] == 0) ? true : false;
+				}
+
+				this.hightlightBlock = function(x, y, z){
+					document.getElementById("x" + z + "x" + y + "x" + x + "x").style.backgroundColor = TTT.default.winColor;		
+				}
+
+				this.sendInput = function(x, y, z){
+					if (!this.gameOver){
+						if (this.isLocationEmpty(x, y, z)){
+							this.setPieceAtLocation(this.turn, x, y, z);
+							this.drawMatrix();
+							var results = this.checkWin();
+							if (results) {
+								this.gameOver = true;
+								for (var i = 0; i < results.length; i += 3){
+									this.hightlightBlock(results[i], results[i + 1], results[i + 2]);
+									XM.setTitle(container, "Game Over");
+								}
+								return;
+							}
+							this.setTurn(this.turn * -1);
+						}
+					} else {
+						board.clear();
+						this.setTurn(TTT.default.startingPlayer);
+						this.drawMatrix();
+					}
+				}
+
+				this.computerLogic = function(){
+					results = this.list_removePlayed(this.checkWin((this.size - 1) * this.turn, true));
+					if (results.length > 0){ //Play where I can win
+						this.sendInput(results[0], results[1], results[2]);
+					}else{
+						results = this.list_removePlayed(this.checkWin((this.size - 1) * this.turn * -1, true));
+						if (results.length > 0){ //Block opponent from winning
+							this.sendInput(results[0], results[1], results[2]);
+						} else {
+							var x = -1;
+							var y = -1;
+							var z = -1;
+							while (x == -1 || y == -1 || z == -1 || !this.isLocationEmpty(x, y, z)){
+								x = Math.round(Math.random() * this.size) - 1;
+								y = Math.round(Math.random() * this.size) - 1;
+								z = Math.round(Math.random() * this.size) - 1;
+							}
+							this.sendInput(x, y, z);
+						}
+					}
+				}
+
+				this.list_removePlayed = function(results){
+					var rdata = [];
+					for (var i = 0; i < results.length; i += 3){
+						if (this.isLocationEmpty(results[i + 2], results[i + 1], results[i])){
+							rdata.push(results[i + 2], results[i + 1], results[i]);
+						}
+					}
+					return rdata;
+				}
+
+				this.checkWin = function(target, signMatters){
+					var target = target || this.size;
+					var signMatters = signMatters || false;
+					var wins = [[], [], [], [], [], [], [], [], [], [], []];
+					var sums = [];
+					//this.matrix[z][y][x]; //y
+					//this.matrix[y][x][z]; //x
+					//this.matrix[y][z][x]; //z
+					sums[9] = sums[10] = 0;
+
+					for (var z = 0; z < this.size; z++){
+
+						sums[0] = sums[1] = sums[2] = sums[3] = sums[4] = sums[5] = 0;
+						wins = [[], [], [], [], [], [], wins[6], wins[7], wins[8], wins[9], wins[10]];
+
+						for (var y = 0; y < this.size; y++){
+
+							sums[6] = sums[7] = sums[8] = 0;
+							wins = [wins[0], wins[1], wins[2], wins[3], wins[4], wins[5], [], [], [], wins[9], wins[10]]
+							for (var x = 0; x < this.size; x++){
+
+								//diag ul to lr
+								if (x == y){
+									sums[0] += this.matrix[z][y][x];
+									wins[0].push(z, y, x);
+
+									sums[2] += this.matrix[y][x][z];
+									wins[2].push(y, x, z);
+
+									sums[4] += this.matrix[y][z][x];
+									wins[4].push(y, z, x);
+								}
+
+								//diag ll to ur
+								if (x + y == this.size - 1){
+									sums[1] += this.matrix[z][y][x];
+									wins[1].push(z, y, x);
+
+									sums[3] += this.matrix[y][x][z];
+									wins[3].push(y, x, z);
+
+									sums[5] += this.matrix[y][z][x];
+									wins[5].push(y, z, x);
+								}
+
+								//rows and cols
+								sums[6] += this.matrix[z][y][x];
+								wins[6].push(z, y, x);
+								sums[7] += this.matrix[z][x][y];
+								wins[7].push(z, x, y);
+								sums[8] += this.matrix[x][y][z];
+								wins[8].push(x, y, z);
+
+								//diag across all planes ul to lr
+								if (x == y && y == z){
+									sums[9] += this.matrix[z][y][x];
+									wins[9].push(z, y, x);
+								}
+
+								//diag across all planes ll to ur
+								if (z == y && x + y == this.size - 1){
+									sums[10] += this.matrix[z][y][x];
+									wins[10].push(z, y, x);
+								}
+							}
+
+							//Check for a winning sum... either -this.size [O] or this.size [X]
+							for (var i = 0; i < sums.length; i++){
+								if (signMatters){
+									if (sums[i] == target){
+										return wins[i];
+									}
+								}else {
+									if (Math.abs(sums[i]) == target){
+										return wins[i];
+									}
+								}
+							}
+						}
+					}
+					return false;
+				}
+
+				this.drawMatrix = function(){
+					var data = "";
+					for (var z = 0; z < this.size; z++){
+						data += '<center><br><table style="color: white;" cellpadding=0 cellspacing=0>';
+						for (var y = 0; y < this.size; y++){
+							data += "<tr>";
+							for (var x = 0; x < this.size; x++){
+								data += '<td style="border:1 solid white;height:21;width:20;text-align:center;cursor:hand;" onclick="board.sendInput('+x+', '+y+', '+z+')" onmouseover="board.debug('+x+', '+y+', '+z+')" id="x'+x+'x'+y+'x'+z+'x">';
+								data += (this.matrix[z][y][x] == 1) ? "X" : (this.matrix[z][y][x] == 0) ? " " : "O";
+								data += "</td>";
+							}
+							data += "</tr>";
+						}
+						data += "</table><br></center>";
+					}
+					document.getElementById(this.targetContainer).innerHTML = data;						
+				}
+
+				this.displayMatrix = function(){
+					var data = "";
+					for (var z = 0; z < this.size; z++){
+						data += "\n";
+						for (var y = 0; y < this.size; y++){
+							data += "\n";
+							for (var x = 0; x < this.size; x++){
+								data += (this.matrix[z][y][x] == 1) ? "X" : (this.matrix[z][y][x] == 0) ? "E" : "O";
+							}
+						}
+					}	
+					return data;	
+				}
+
+				params = params || {};
+				this.targetContainer = params.container || TTT.default.container;
+				this.size = params.size || TTT.default.size;
+				this.matrix = null;
+				this.clear();
+				this.setTurn(TTT.default.startingPlayer);
+
+			}
+		};
+	</script>
+
+  <body onload="TTT.main()">
+
+    <span id="game_HTML" style="text-align:center;">
+      <canvas id="webgl_game" style="border:0 solid silver;" height="600" width="600">
+				Please use a modern browser that supports "canvas"... Chrome
+      </canvas>
+    </span>
+
+    <script src="./lib/webgl-utils.js"></script>
+    <script src="./lib/webgl-debug.js"></script>
+    <script src="./lib/cuon-utils.js"></script>
+    <script src="./lib/cuon-matrix.js"></script>
+    <script src="Model3DCreatorV3.js"></script>
+    <script src="gaia_chrome_min.js"></script>
+
+  </body>
+</html>
