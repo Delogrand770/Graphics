@@ -1,6 +1,7 @@
 <html>
   <head>
     <title>3D TicTacToe</title>
+    <link rel="stylesheet" href="css/style.css">
 
     <style>
       html {  
@@ -41,10 +42,13 @@
 	<script>
 		var board;
 		var container;
+		var camera;
 		var TTT = {
 			default: {size: 3, container: 'boards', winColor: '#0099ff', startingPlayer: 1},
 			main:function(){
-				container = XM.static({title: "X's Turn", body: '<span id="boards"></span><input type="button" value="AI" onclick="board.computerLogic()">', width: 200, top: 10, left: 10});
+				container = XM.static({title: "X's Turn", body: '<span id="boards"></span><input type="button" value="AI" onclick="board.computerLogic()">', width: 200, top: 200, left: 10});
+				camera = XM.static({title: "Camera", bodySource: 'camera_HTML', top: 10, left: 10, width: 200});
+				XU.centerElement('game_HTML', 'b');
 				board = new TTT.Board();
 				board.drawMatrix();
 				board.sendAllToGame();
@@ -290,34 +294,43 @@
   </head>
 
   <body onload="myGame.init();TTT.main();">
-    <span id="game_HTML">
+
+    <div id="container" class="container">
+      <div id="output" class="container">
+      </div>
+    </div>
+    <div id="controls" class="controls" style="display:none;">
+    </div>
+    
+    <script src="js/triangles.js"></script>
+
+    <span id="game_HTML" style="position:absolute;">
       <center>
-        <canvas id="GameWindow" style="border:1 solid silver;" width="400" height="400">
+        <canvas id="GameWindow" style="border:0 solid silver;" width="600" height="600">
         Please use a modern browser that supports "canvas"... Chrome
         </canvas>
       </center>
     </span>
 
-    <span id="translation_HTML">
+    <span id="camera_HTML" style="display:none;">
       <center>
-        <fieldset>
-          <legend>Camera</legend>
-          Perspective<input type="radio" name="view" value="Perspective" checked onclick="myGame.setProjectionMode(1)">
-          <br>
-          Orthogonal<input type="radio" name="view" value="Orthogonal" onclick="myGame.setProjectionMode(0)"><br><br>
-          <select id="cameraModifier" onchange="myGame.setCameraMode(this.value)">
-            <option value=10 selected>Reset</option>
-            <option value=1>Pan</option>
-            <option value=2>Tilt</option>
-            <option value=3>Pedestal</option>
-            <option value=4>Tongue</option>
-            <option value=5>Crane</option>
-            <option value=6>Dolly</option>
-            <option value=7>Truck</option>
-            <option value=8>Arc</option>
-            <option value=9>Cant</option>
-          </select>
-        </fieldset>
+        Perspective<input type="radio" name="view" value="Perspective" checked onclick="myGame.setProjectionMode(1)">
+        <br>
+        Orthogonal<input type="radio" name="view" value="Orthogonal" onclick="myGame.setProjectionMode(0)"><br><br>
+        Control
+        <select id="cameraModifier" onchange="myGame.setCameraMode(this.value)">
+          <option value=10>Reset</option>
+          <option value=1>Pan</option>
+          <option value=2>Tilt</option>
+          <option value=3>Pedestal</option>
+          <option value=4>Tongue</option>
+          <option value=5>Crane</option>
+          <option value=6>Dolly</option>
+          <option value=7>Truck</option>
+          <option value=8>Arc</option>
+          <option value=9>Cant</option>
+          <option value=11 selected>Custom</option>
+        </select>
       </center>
     </span>
 

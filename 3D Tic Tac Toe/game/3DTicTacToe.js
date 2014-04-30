@@ -57,6 +57,9 @@ function myMouseDragged(e) {
     	myGame.arcCamera(deltaX, deltaY);
     } else if (myGame.cameraMode == 9){
     	myGame.cantCamera(deltaX, deltaY);
+    } else if (myGame.cameraMode == 11){
+    	myGame.arcCameraUD(deltaX, deltaY);
+    	myGame.arcCameraLR(deltaX, deltaY);
     }
 
     myGame.draw();
@@ -100,9 +103,9 @@ var TicTacToe3D = function() {
   this.projectionMode = this.PERSPECTIVE_PROJECTION;
   
   // Camera Values
-  this.cameraMode = this.NO_CAMERA_MOVEMENT;
+  this.cameraMode = 11;
   this.startOfMouseDrag = null;
-  this.eye = [17.0, 17.0, 17.0];
+  this.eye = [19.5, 19.5, 19.5];
   this.at = [1.0, 2.0, 0.0];
   this.upVector = [0.0, 1.0, 0.0];
   this.eyeDefault = this.eye.slice(0);
@@ -115,7 +118,7 @@ var TicTacToe3D = function() {
   this.n = [];
   
   // Camera manipulation increments
-  this.ROTATE_ANGLE = 0.1;  // in degrees
+  this.ROTATE_ANGLE = 0.3;  // in degrees
   this.OFFSET_CAMERA = 0.1;
   this.BOOM_LENGTH = 20.0;
   this.boomAngle = 0.0;
@@ -229,7 +232,7 @@ var TicTacToe3D = function() {
   this.fillContainer = function(){
   	var spacing = 2.5;
   	var xOffset = 0;
-  	var yOffset = -6;
+  	var yOffset = -5.5;
   	var zOffset = 0;
     for (z = 0; z < this.container.zDim; z++) {
       for (y = 0; y < this.container.yDim; y++) {
@@ -263,7 +266,7 @@ var TicTacToe3D = function() {
     
     // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     // Step 1: clear the graphics window -- and depth buffers
-    this.gl.clearColor(0.0, 0.0, 0.0, 1.0);
+    this.gl.clearColor(0.0, 0.0, 0.0, 0.0);
     this.gl.clear(this.gl.COLOR_BUFFER_BIT | this.gl.DEPTH_BUFFER_BIT);
 
     // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
@@ -521,6 +524,52 @@ var TicTacToe3D = function() {
   };
   
   //------------------------------------------------------------------------------
+  this.arcCameraLR = function(deltaX, deltaY) {
+    this.calculateCameraCoordinateSystem();
+    
+    // The amount of rotation is controled by the size of deltaY
+    var angle = this.ROTATE_ANGLE * deltaX;
+    
+    // Rotate about the eye using the upVector vector as the axis of rotation
+    var m = new Matrix4();
+    m.setIdentity();
+    m.rotate(-angle, 0, 1, 0);
+    
+    var nVec4 = new Vector4([this.n[0], this.n[1], this.n[2], 1.0]);    
+    var nNewVec4 = m.multiplyVector4(nVec4);
+    var nNew = [nNewVec4.elements[0], nNewVec4.elements[1], nNewVec4.elements[2]];
+    
+    var eyeToAtDistance = this.distance( this.eye, this.at);
+    this.scale(nNew, eyeToAtDistance);
+    this.add(this.at, nNew, this.eye);
+    
+    this.setCamera();
+  };
+
+  //------------------------------------------------------------------------------
+  this.arcCameraUD = function(deltaX, deltaY) {
+    this.calculateCameraCoordinateSystem();
+    
+    // The amount of rotation is controled by the size of deltaY
+    var angle = this.ROTATE_ANGLE * deltaY;
+    
+    // Rotate about the eye using the upVector vector as the axis of rotation
+    var m = new Matrix4();
+    m.setIdentity();
+    m.rotate(-angle, 1, 0, -1);
+    
+    var nVec4 = new Vector4([this.n[0], this.n[1], this.n[2], 1.0]);    
+    var nNewVec4 = m.multiplyVector4(nVec4);
+    var nNew = [nNewVec4.elements[0], nNewVec4.elements[1], nNewVec4.elements[2]];
+    
+    var eyeToAtDistance = this.distance( this.eye, this.at);
+    this.scale(nNew, eyeToAtDistance);
+    this.add(this.at, nNew, this.eye);
+    
+    this.setCamera();
+  };
+
+   //------------------------------------------------------------------------------
   this.arcCamera = function(deltaX, deltaY) {
     this.calculateCameraCoordinateSystem();
     
