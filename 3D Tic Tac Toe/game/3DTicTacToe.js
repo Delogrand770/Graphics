@@ -88,9 +88,6 @@ var TicTacToe3D = function() {
   // Calculate the inverse of the modelMatrix to get the direction
   // of the global axes.
   this.modelMatrixInverse = new Matrix4();
-  
-  // Keep track of the last time the canvas was redrawn.
-  this.previousTime = Date.now();
 
   this.gameOver;
   
@@ -222,7 +219,7 @@ var TicTacToe3D = function() {
 
     myGame.modelMatrix.setIdentity();
 
-    this.container.changeModel(this.myWidgets[1], 0, 0, 0);
+    //this.container.changeModel(this.myWidgets[1], 0, 0, 0);
     myGame.panCamera(0,0);
     myGame.draw();
 
@@ -231,14 +228,14 @@ var TicTacToe3D = function() {
   
   this.fillContainer = function(){
   	var spacing = 2.5;
-  	var xOffset = -2;
-  	var yOffset = 0;
+  	var xOffset = 0;
+  	var yOffset = -6;
   	var zOffset = 0;
-		for (y = 0; y < this.container.yDim; y++) {
-			for (x = 0; x < this.container.xDim; x++) {
-				for (z = 0; z < this.container.zDim; z++) {
-					this.buildModelMatrix(spacing * y - yOffset, spacing * x - xOffset, spacing * z - zOffset);
-    			this.container.addWidget(this.myWidgets[0], this.modelMatrix, y, x, z);
+    for (z = 0; z < this.container.zDim; z++) {
+      for (y = 0; y < this.container.yDim; y++) {
+        for (x = 0; x < this.container.xDim; x++) {
+					this.buildModelMatrix(spacing * z - zOffset, -spacing * y - yOffset, spacing * x - xOffset);
+    			this.container.addWidget(this.myWidgets[0], this.modelMatrix, z, y, x);
 				}
 			}
 		}
@@ -247,14 +244,7 @@ var TicTacToe3D = function() {
   //------------------------------------------------------------------------------
   // Animation function, which drops the widget 1 unit on the y axis each second.
   this.tick = function() {
-
-    var now = Date.now();
-    var elapsedTime = now - myGame.previousTime;
-    
-    if (elapsedTime >= 1000) {      
-      myGame.previousTime = now;
-      myGame.draw();
-    }
+     myGame.draw();
     
     // Request that the browser call tick
     requestAnimationFrame(myGame.tick); 

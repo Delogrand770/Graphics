@@ -100,7 +100,7 @@ var TetrisContainer = function() {
   this.changeModel = function(model, x, y, z){
     for (j = 0; j < model.length; j++) {
       // Remember this cube and its transform at this location in the container.
-      this.Array[y][x][z].model = model[j];
+      this.Array[z][x][y].model = model[j];
     }    
   }
   

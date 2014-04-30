@@ -11,6 +11,7 @@
         height: 100%;
         font-size: 100%;
         font-family: "Megrim", sans-serif;
+        overflow: hidden;
       }
 
       .btn{
@@ -34,15 +35,19 @@
 
     <script src="gaia_chrome_min.js"></script>
 
+
+
+
 	<script>
 		var board;
 		var container;
 		var TTT = {
 			default: {size: 3, container: 'boards', winColor: '#0099ff', startingPlayer: 1},
 			main:function(){
-				container = XM.static({title: "X's Turn", body: '<span id="boards"></span><input type="button" value="AI" onclick="board.computerLogic()">', width: 200, top: 10, left: 'center'});
+				container = XM.static({title: "X's Turn", body: '<span id="boards"></span><input type="button" value="AI" onclick="board.computerLogic()">', width: 200, top: 10, left: 10});
 				board = new TTT.Board();
 				board.drawMatrix();
+				board.sendAllToGame();
 			},
 			Board:function(params){
 
@@ -60,6 +65,18 @@
 					}
 				}
 
+				this.sendAllToGame = function(){
+					for (var z = 0; z < this.size; z++){
+						for (var y = 0; y < this.size; y++){
+							for (var x = 0; x < this.size; x++){
+								var real = this.matrix[z][y][x];
+								var converted = (real == -1) ? 1 : (real == 1) ? 2 : 0;
+								myGame.container.changeModel(myGame.myWidgets[converted], z, y, x);
+							}
+						}
+					}		
+				}
+
 				this.debug = function(x, y, z){
 					document.title = "x: " + x + " | y: " + y + " | z: " + z;
 				}
@@ -74,6 +91,8 @@
 					//x =  1
 					//o = -1
 					this.matrix[z][y][x] = p;
+					var converted = (p == -1) ? 1 : (p == 1) ? 2 : 0;
+					myGame.container.changeModel(myGame.myWidgets[converted], x, y, z);
 				}
 
 				this.isLocationEmpty = function(x, y, z){
@@ -82,7 +101,8 @@
 				}
 
 				this.hightlightBlock = function(x, y, z){
-					document.getElementById("x" + z + "x" + y + "x" + x + "x").style.backgroundColor = TTT.default.winColor;		
+					document.getElementById("x" + z + "x" + y + "x" + x + "x").style.backgroundColor = TTT.default.winColor;
+					myGame.container.changeModel(myGame.myWidgets[3], z, y, x);	
 				}
 
 				this.sendInput = function(x, y, z){
@@ -103,6 +123,7 @@
 						}
 					} else {
 						board.clear();
+						board.sendAllToGame();
 						this.setTurn(TTT.default.startingPlayer);
 						this.drawMatrix();
 					}
@@ -268,7 +289,7 @@
 
   </head>
 
-  <body onload="myGame.init();">
+  <body onload="myGame.init();TTT.main();">
     <span id="game_HTML">
       <center>
         <canvas id="GameWindow" style="border:1 solid silver;" width="400" height="400">
