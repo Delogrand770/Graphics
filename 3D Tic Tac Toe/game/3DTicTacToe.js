@@ -323,7 +323,7 @@ var TicTacToe3D = function() {
   this.setProjection = function() {
     switch (this.projectionMode) {
       case this.ORTHOGRAPHIC_PROJECTION:
-        var left = -6.0;
+        var left = -8.0;
         var right = -left;
         var canvasRatio = this.canvas.width / this.canvas.height;
         var height = (right - left) / canvasRatio;
