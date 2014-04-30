@@ -46,12 +46,17 @@
 		var TTT = {
 			default: {size: 3, container: 'boards', winColor: '#0099ff', startingPlayer: 1},
 			main:function(){
+
+    		window.addEventListener('resize', TTT.position);
 				container = XM.static({title: "X's Turn", body: '<span id="boards"></span><input type="button" value="AI" onclick="board.computerLogic()">', width: 200, top: 200, left: 10});
 				camera = XM.static({title: "Camera", bodySource: 'camera_HTML', top: 10, left: 10, width: 200});
 				XU.centerElement('game_HTML', 'b');
 				board = new TTT.Board();
 				board.drawMatrix();
 				board.sendAllToGame();
+			},
+			position:function(){
+				XU.centerElement('game_HTML', 'b');
 			},
 			Board:function(params){
 
